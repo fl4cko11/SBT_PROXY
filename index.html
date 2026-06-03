@@ -1329,7 +1329,7 @@
             </div>
             <div>
               <div class="brand-title">SBER TECH</div>
-              <div class="brand-name">Agent Console</div>
+              <div class="brand-name">AG-11-IVA</div>
             </div>
           </div>
         </div>
@@ -1507,10 +1507,10 @@
   </div>
 
   <script>
-    const API_BASE = "/agents";
-    const API_URL = `${API_BASE}/chat`;
-    const LOGIN_URL = `${API_BASE}/login`;
-    const INGEST_URL = `${API_BASE}/ingest`;
+    const API_URL = `/api/agents/chat`;
+    const INITIALIZE_URL = `/api/agents/chat/initialize`;
+    const LOGIN_URL = `/api/auth/login`;
+    const INGEST_URL = `/api/rag/ingest`;
     const STORAGE_KEY = "sber-tech-agent-chats-v1";
 
     const statusPill = document.getElementById("statusPill");
@@ -1604,6 +1604,29 @@
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.chats));
+    }
+
+    async function initializeChatSession(sessionId) {
+      const response = await fetch(INITIALIZE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          session_id: sessionId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      if (payload && payload.success === false) {
+        throw new Error(payload.message || "Не удалось инициализировать чат.");
+      }
+
+      return payload;
     }
 
     function setMessage(target, text, isSuccess = false) {
@@ -2147,13 +2170,22 @@
       }
     }
 
-    newChatButton.addEventListener("click", () => {
+    newChatButton.addEventListener("click", async () => {
       const chat = createChat();
-      state.chats.unshift(chat);
-      activeChatId = chat.id;
-      saveState();
-      render();
-      messageInput.focus();
+      newChatButton.disabled = true;
+
+      try {
+        await initializeChatSession(chat.sessionId);
+        state.chats.unshift(chat);
+        activeChatId = chat.id;
+        saveState();
+        render();
+        messageInput.focus();
+      } catch (error) {
+        window.alert(`Не удалось создать новый чат: ${error.message}`);
+      } finally {
+        newChatButton.disabled = false;
+      }
     });
 
     clearChatsButton.addEventListener("click", deleteAllChats);
