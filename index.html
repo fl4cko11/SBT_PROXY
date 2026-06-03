@@ -1482,7 +1482,7 @@
         <section class="upload-card" id="ragUploadCard">
           <div>
             <h3>RAG Ingest</h3>
-            <p>Перетащите `.md` файл или выберите его вручную, затем укажите имя коллекции.</p>
+            <p>Перетащите `.md` файл или выберите его вручную для загрузки и ingest.</p>
           </div>
           <label class="dropzone" id="ragDropzone" for="ragFileInput">
             <input class="hidden-file-input" id="ragFileInput" type="file" accept=".md,text/markdown">
@@ -1492,10 +1492,6 @@
             </div>
           </label>
           <form class="upload-form" id="ragUploadForm">
-            <div>
-              <label class="field-label" for="collectionNameInput">Collection name</label>
-              <input class="collection-input" id="collectionNameInput" type="text" placeholder="security-knowledge">
-            </div>
             <div class="form-message" id="ragUploadMessage"></div>
             <div class="upload-actions">
               <button class="primary-action" id="ragUploadSubmit" type="submit">Upload</button>
@@ -1548,7 +1544,6 @@
     const ragFileInput = document.getElementById("ragFileInput");
     const ragFileMeta = document.getElementById("ragFileMeta");
     const ragUploadForm = document.getElementById("ragUploadForm");
-    const collectionNameInput = document.getElementById("collectionNameInput");
     const ragUploadMessage = document.getElementById("ragUploadMessage");
     const ragUploadSubmit = document.getElementById("ragUploadSubmit");
 
@@ -2277,7 +2272,6 @@
 
     ragUploadForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const collectionName = collectionNameInput.value.trim();
       if (!selectedRagFile) {
         setMessage(ragUploadMessage, "Выберите `.md` файл.");
         return;
@@ -2286,14 +2280,9 @@
         setMessage(ragUploadMessage, "Поддерживаются только `.md` файлы.");
         return;
       }
-      if (!collectionName) {
-        setMessage(ragUploadMessage, "Укажите имя коллекции.");
-        return;
-      }
 
       const formData = new FormData();
       formData.append("file", selectedRagFile);
-      formData.append("collection_name", collectionName);
 
       ragUploadSubmit.disabled = true;
       setMessage(ragUploadMessage, "Загрузка и ingest...", true);
