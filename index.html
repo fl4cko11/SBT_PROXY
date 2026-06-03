@@ -78,6 +78,7 @@
 
     .app-frame {
       height: 100%;
+      min-height: 0;
       display: grid;
       grid-template-columns: var(--sidebar-width) 1fr;
       border: 1px solid rgba(96, 165, 250, 0.14);
@@ -94,15 +95,19 @@
     }
 
     .sidebar {
+      height: 100%;
       display: flex;
       flex-direction: column;
+      min-height: 0;
       min-width: 0;
+      overflow: hidden;
       border-right: 1px solid rgba(96, 165, 250, 0.12);
       background:
         linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(7, 17, 38, 0.98));
     }
 
     .brand {
+      flex: 0 0 auto;
       padding: 18px 18px 14px;
       border-bottom: 1px solid rgba(96, 165, 250, 0.12);
     }
@@ -149,6 +154,7 @@
     }
 
     .sidebar-controls {
+      flex: 0 0 auto;
       padding: 14px 18px 14px;
       display: flex;
       align-items: center;
@@ -191,6 +197,22 @@
       box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.06),
         0 0 24px rgba(59, 130, 246, 0.14);
+    }
+
+    .danger-button {
+      border-color: rgba(248, 113, 113, 0.24);
+      color: #f87171;
+      background:
+        linear-gradient(180deg, rgba(127, 29, 29, 0.22), rgba(69, 10, 10, 0.16));
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 0 18px rgba(127, 29, 29, 0.12);
+    }
+
+    .danger-button:hover {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 0 20px rgba(248, 113, 113, 0.14);
     }
 
     .button-primary:hover,
@@ -257,16 +279,21 @@
     }
 
     .chat-list-wrap {
+      flex: 1 1 auto;
+      height: 0;
       min-height: 0;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
       padding: 14px 10px 14px 14px;
     }
 
     .chat-list {
       flex: 1;
+      height: 100%;
       min-height: 0;
       overflow: auto;
+      overscroll-behavior: contain;
       padding-right: 6px;
       display: grid;
       gap: 8px;
@@ -494,6 +521,22 @@
       display: flex;
       align-items: center;
       gap: 10px;
+    }
+
+    .admin-trigger {
+      min-width: 40px;
+      min-height: 40px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(96, 165, 250, 0.16);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-soft);
+    }
+
+    .admin-trigger svg {
+      width: 16px;
+      height: 16px;
     }
 
     .session-badge {
@@ -914,6 +957,217 @@
       display: none;
     }
 
+    .modal-overlay,
+    .admin-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(14px);
+      z-index: 50;
+    }
+
+    .modal-overlay.open,
+    .admin-overlay.open {
+      display: flex;
+    }
+
+    .modal-card,
+    .admin-panel {
+      width: min(100%, 440px);
+      border-radius: 24px;
+      border: 1px solid rgba(96, 165, 250, 0.16);
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(7, 17, 38, 0.98));
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+      animation: fadeUp 260ms ease;
+    }
+
+    .modal-card {
+      padding: 18px;
+    }
+
+    .modal-card h3,
+    .admin-header h2,
+    .admin-module-button h3,
+    .upload-card h3 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 650;
+    }
+
+    .modal-card p,
+    .admin-header p,
+    .admin-module-button p,
+    .upload-card p,
+    .field-label,
+    .upload-meta,
+    .status-text {
+      margin: 0;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .modal-header,
+    .admin-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .modal-close,
+    .admin-close {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(96, 165, 250, 0.16);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-soft);
+    }
+
+    .password-input,
+    .collection-input {
+      width: 100%;
+      min-height: 44px;
+      padding: 0 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(96, 165, 250, 0.18);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-main);
+      outline: none;
+      font: inherit;
+    }
+
+    .password-input:focus,
+    .collection-input:focus {
+      border-color: var(--blue-3);
+      box-shadow: 0 0 0 1px var(--blue-3);
+    }
+
+    .modal-form,
+    .upload-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .modal-actions,
+    .upload-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .secondary-action,
+    .primary-action {
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(96, 165, 250, 0.18);
+      font: inherit;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .secondary-action {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .primary-action {
+      background: linear-gradient(180deg, rgba(59, 130, 246, 0.24), rgba(37, 99, 235, 0.18));
+    }
+
+    .form-message {
+      min-height: 18px;
+      color: #fda4af;
+      font-size: 0.78rem;
+    }
+
+    .form-message.success {
+      color: #93c5fd;
+    }
+
+    .admin-panel {
+      width: min(100%, 920px);
+      max-height: min(88vh, 860px);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow: auto;
+    }
+
+    .admin-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .admin-module-button,
+    .upload-card {
+      border-radius: 20px;
+      border: 1px solid rgba(96, 165, 250, 0.14);
+      background: rgba(255, 255, 255, 0.03);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    .admin-module-button {
+      padding: 16px;
+      text-align: left;
+      cursor: pointer;
+      transition: transform var(--anim-fast), border-color var(--anim-med), box-shadow var(--anim-med);
+    }
+
+    .admin-module-button:hover,
+    .admin-module-button.active {
+      transform: translateY(-1px);
+      border-color: rgba(96, 165, 250, 0.24);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.08);
+    }
+
+    .upload-card {
+      padding: 16px;
+      display: none;
+      gap: 14px;
+    }
+
+    .upload-card.open {
+      display: grid;
+    }
+
+    .dropzone {
+      min-height: 140px;
+      border-radius: 18px;
+      border: 1px dashed rgba(96, 165, 250, 0.24);
+      background: rgba(255, 255, 255, 0.02);
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 18px;
+      color: var(--text-soft);
+      transition: border-color var(--anim-med), background var(--anim-med), box-shadow var(--anim-med);
+    }
+
+    .dropzone.dragover {
+      border-color: var(--blue-3);
+      background: rgba(59, 130, 246, 0.08);
+      box-shadow: 0 0 18px rgba(59, 130, 246, 0.08);
+    }
+
+    .hidden-file-input {
+      display: none;
+    }
+
+    .field-label {
+      display: block;
+      margin-bottom: 6px;
+    }
+
     @keyframes fadeUp {
       from {
         opacity: 0;
@@ -1076,13 +1330,14 @@
               <path d="M5 12H19" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
             </svg>
           </button>
-          <button class="button-primary" id="clearChatsButton" type="button" aria-label="Delete all chats">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M4 7H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M9 7V5.5C9 4.67157 9.67157 4 10.5 4H13.5C14.3284 4 15 4.67157 15 5.5V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M7 10V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M12 10V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M17 10V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          <button class="button-primary danger-button" id="clearChatsButton" type="button" aria-label="Delete all chats">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M5 7H19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M9 7V5.8C9 5.13726 9.53726 4.6 10.2 4.6H13.8C14.4627 4.6 15 5.13726 15 5.8V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M9 10.2V16.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M12 10.2V16.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M15 10.2V16.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <path d="M7.2 7L7.8 17.6C7.85569 18.5841 8.67052 19.35 9.65615 19.35H14.3439C15.3295 19.35 16.1443 18.5841 16.2 17.6L16.8 7" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
             </svg>
           </button>
           <div class="search-wrap">
@@ -1112,6 +1367,12 @@
                 <path d="M4 7H20" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
                 <path d="M4 12H20" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
                 <path d="M4 17H20" stroke="#CBD5E1" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </button>
+            <button class="icon-button admin-trigger" id="adminButton" type="button" aria-label="Admin access">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 3L19 6V11C19 15.418 16.2 18.95 12 20C7.8 18.95 5 15.418 5 11V6L12 3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M9.5 12.2L11.2 13.9L14.8 10.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
             <div class="session-badge" id="sessionHint">Session ID: -</div>
@@ -1163,8 +1424,82 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="adminLoginModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Administrator Access</h3>
+          <p>Введите пароль, чтобы открыть административную панель.</p>
+        </div>
+        <button class="modal-close" id="adminLoginClose" type="button" aria-label="Close admin login">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6L18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <form class="modal-form" id="adminLoginForm">
+        <input class="password-input" id="adminPasswordInput" type="password" placeholder="Password" autocomplete="current-password">
+        <div class="form-message" id="adminLoginMessage"></div>
+        <div class="modal-actions">
+          <button class="secondary-action" id="adminLoginCancel" type="button">Cancel</button>
+          <button class="primary-action" id="adminLoginSubmit" type="submit">Login</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="admin-overlay" id="adminPanelOverlay">
+    <div class="admin-panel">
+      <div class="admin-header">
+        <div>
+          <h2>Admin Console</h2>
+          <p>Внутренние операции и инструменты управления.</p>
+        </div>
+        <button class="admin-close" id="adminPanelClose" type="button" aria-label="Close admin panel">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M6 6L18 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="admin-grid">
+        <button class="admin-module-button" id="ragModuleButton" type="button">
+          <h3>RAG</h3>
+          <p>Загрузка markdown-документов и ingest в векторную базу.</p>
+        </button>
+        <section class="upload-card" id="ragUploadCard">
+          <div>
+            <h3>RAG Ingest</h3>
+            <p>Перетащите `.md` файл или выберите его вручную, затем укажите имя коллекции.</p>
+          </div>
+          <label class="dropzone" id="ragDropzone" for="ragFileInput">
+            <input class="hidden-file-input" id="ragFileInput" type="file" accept=".md,text/markdown">
+            <div>
+              <div>Drop `.md` file here</div>
+              <div class="upload-meta" id="ragFileMeta">или нажмите, чтобы выбрать файл</div>
+            </div>
+          </label>
+          <form class="upload-form" id="ragUploadForm">
+            <div>
+              <label class="field-label" for="collectionNameInput">Collection name</label>
+              <input class="collection-input" id="collectionNameInput" type="text" placeholder="security-knowledge">
+            </div>
+            <div class="form-message" id="ragUploadMessage"></div>
+            <div class="upload-actions">
+              <button class="primary-action" id="ragUploadSubmit" type="submit">Upload</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const API_URL = "/agents/chat";
+    const API_BASE = "/agents";
+    const API_URL = `${API_BASE}/chat`;
+    const LOGIN_URL = `${API_BASE}/login`;
+    const INGEST_URL = `${API_BASE}/ingest`;
     const STORAGE_KEY = "sber-tech-agent-chats-v1";
 
     const statusPill = document.getElementById("statusPill");
@@ -1186,6 +1521,25 @@
     const scenarioPanel = document.getElementById("scenarioPanel");
     const scenarioOptionList = document.getElementById("scenarioOptionList");
     const scenarioCurrent = document.getElementById("scenarioCurrent");
+    const adminButton = document.getElementById("adminButton");
+    const adminLoginModal = document.getElementById("adminLoginModal");
+    const adminLoginClose = document.getElementById("adminLoginClose");
+    const adminLoginCancel = document.getElementById("adminLoginCancel");
+    const adminLoginForm = document.getElementById("adminLoginForm");
+    const adminPasswordInput = document.getElementById("adminPasswordInput");
+    const adminLoginMessage = document.getElementById("adminLoginMessage");
+    const adminLoginSubmit = document.getElementById("adminLoginSubmit");
+    const adminPanelOverlay = document.getElementById("adminPanelOverlay");
+    const adminPanelClose = document.getElementById("adminPanelClose");
+    const ragModuleButton = document.getElementById("ragModuleButton");
+    const ragUploadCard = document.getElementById("ragUploadCard");
+    const ragDropzone = document.getElementById("ragDropzone");
+    const ragFileInput = document.getElementById("ragFileInput");
+    const ragFileMeta = document.getElementById("ragFileMeta");
+    const ragUploadForm = document.getElementById("ragUploadForm");
+    const collectionNameInput = document.getElementById("collectionNameInput");
+    const ragUploadMessage = document.getElementById("ragUploadMessage");
+    const ragUploadSubmit = document.getElementById("ragUploadSubmit");
 
     const statusSequence = ["Thinking", "Searching", "Processing"];
     const scenarioCatalog = [
@@ -1213,6 +1567,8 @@
     let statusTimer = null;
     let statusIndex = 0;
     let activeChatId = null;
+    let isAdminAuthenticated = false;
+    let selectedRagFile = null;
 
     const initialState = loadState();
     const state = {
@@ -1252,6 +1608,39 @@
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state.chats));
+    }
+
+    function setMessage(target, text, isSuccess = false) {
+      target.textContent = text || "";
+      target.classList.toggle("success", Boolean(isSuccess));
+    }
+
+    function openAdminLogin() {
+      setMessage(adminLoginMessage, "");
+      adminPasswordInput.value = "";
+      adminLoginModal.classList.add("open");
+      window.setTimeout(() => adminPasswordInput.focus(), 20);
+    }
+
+    function closeAdminLogin() {
+      adminLoginModal.classList.remove("open");
+    }
+
+    function openAdminPanel() {
+      adminPanelOverlay.classList.add("open");
+      ragModuleButton.classList.add("active");
+      ragUploadCard.classList.add("open");
+    }
+
+    function closeAdminPanel() {
+      adminPanelOverlay.classList.remove("open");
+    }
+
+    function updateRagFile(file) {
+      selectedRagFile = file;
+      ragFileMeta.textContent = file
+        ? `${file.name} • ${(file.size / 1024).toFixed(1)} KB`
+        : "или нажмите, чтобы выбрать файл";
     }
 
     function getActiveChat() {
@@ -1768,6 +2157,134 @@
     });
 
     clearChatsButton.addEventListener("click", deleteAllChats);
+    adminButton.addEventListener("click", () => {
+      if (isAdminAuthenticated) {
+        openAdminPanel();
+        return;
+      }
+      openAdminLogin();
+    });
+
+    adminLoginClose.addEventListener("click", closeAdminLogin);
+    adminLoginCancel.addEventListener("click", closeAdminLogin);
+
+    adminLoginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const password = adminPasswordInput.value.trim();
+      if (!password) {
+        setMessage(adminLoginMessage, "Введите пароль.");
+        return;
+      }
+
+      adminLoginSubmit.disabled = true;
+      setMessage(adminLoginMessage, "");
+
+      try {
+        const response = await fetch(LOGIN_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            password
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        if (!payload.success) {
+          setMessage(adminLoginMessage, payload.message || "Неверный пароль.");
+          return;
+        }
+
+        isAdminAuthenticated = true;
+        setMessage(adminLoginMessage, payload.message || "Успешная авторизация.", true);
+        closeAdminLogin();
+        openAdminPanel();
+      } catch (error) {
+        setMessage(adminLoginMessage, `Ошибка входа: ${error.message}`);
+      } finally {
+        adminLoginSubmit.disabled = false;
+      }
+    });
+
+    adminPanelClose.addEventListener("click", closeAdminPanel);
+    ragModuleButton.addEventListener("click", () => {
+      const isOpen = ragUploadCard.classList.toggle("open");
+      ragModuleButton.classList.toggle("active", isOpen);
+    });
+
+    ragFileInput.addEventListener("change", () => {
+      updateRagFile(ragFileInput.files?.[0] || null);
+    });
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      ragDropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        ragDropzone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      ragDropzone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        ragDropzone.classList.remove("dragover");
+      });
+    });
+
+    ragDropzone.addEventListener("drop", (event) => {
+      const file = event.dataTransfer?.files?.[0] || null;
+      if (!file) {
+        return;
+      }
+      updateRagFile(file);
+    });
+
+    ragUploadForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const collectionName = collectionNameInput.value.trim();
+      if (!selectedRagFile) {
+        setMessage(ragUploadMessage, "Выберите `.md` файл.");
+        return;
+      }
+      if (!selectedRagFile.name.toLowerCase().endsWith(".md")) {
+        setMessage(ragUploadMessage, "Поддерживаются только `.md` файлы.");
+        return;
+      }
+      if (!collectionName) {
+        setMessage(ragUploadMessage, "Укажите имя коллекции.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", selectedRagFile);
+      formData.append("collection_name", collectionName);
+
+      ragUploadSubmit.disabled = true;
+      setMessage(ragUploadMessage, "Загрузка и ingest...", true);
+
+      try {
+        const response = await fetch(INGEST_URL, {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        setMessage(ragUploadMessage, "Файл успешно загружен и отправлен в ingest.", true);
+        ragUploadForm.reset();
+        updateRagFile(null);
+      } catch (error) {
+        setMessage(ragUploadMessage, `Ошибка ingest: ${error.message}`);
+      } finally {
+        ragUploadSubmit.disabled = false;
+      }
+    });
 
     chatList.addEventListener("click", (event) => {
       const deleteButton = event.target.closest("[data-delete-chat-id]");
@@ -1852,6 +2369,18 @@
       }
 
       toggleScenarioPanel(false);
+    });
+
+    adminLoginModal.addEventListener("click", (event) => {
+      if (event.target === adminLoginModal) {
+        closeAdminLogin();
+      }
+    });
+
+    adminPanelOverlay.addEventListener("click", (event) => {
+      if (event.target === adminPanelOverlay) {
+        closeAdminPanel();
+      }
     });
 
     window.addEventListener("resize", () => {
