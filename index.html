@@ -845,7 +845,7 @@
 
     .scenario-panel {
       position: absolute;
-      right: 8px;
+      left: 8px;
       bottom: calc(100% + 12px);
       width: min(280px, calc(100vw - 40px));
       padding: 12px;
@@ -1226,7 +1226,7 @@
       }
 
       .scenario-panel {
-        right: 0;
+        left: 0;
       }
     }
 
@@ -1558,21 +1558,6 @@
         value: "max_patrol",
         label: "max_patrol",
         description: "Базовый профиль для интеграций и автоматизированных проверок."
-      },
-      {
-        value: "incident_triage",
-        label: "incident_triage",
-        description: "Быстрый первичный разбор инцидентов и приоритизация действий."
-      },
-      {
-        value: "infra_vulnerability",
-        label: "infra_vulnerability",
-        description: "Анализ инфраструктурных рисков, зависимостей и уязвимостей."
-      },
-      {
-        value: "network_forensics",
-        label: "network_forensics",
-        description: "Сетевой разбор, индикаторы компрометации и forensic-контекст."
       }
     ];
     let statusTimer = null;
