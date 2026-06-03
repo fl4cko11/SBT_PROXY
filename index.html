@@ -752,37 +752,50 @@
     .composer-grid {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 10px;
+      gap: 0;
     }
 
     textarea {
       resize: none;
       min-height: 104px;
       max-height: 260px;
-      padding: 16px 116px 54px 16px;
-      border-radius: 22px;
+      overflow: auto;
+      scrollbar-width: none;
+      padding: 16px;
+      border-radius: 18px 18px 0 0;
       box-shadow: none;
       line-height: 1.55;
       background: rgba(255, 255, 255, 0.02);
-      border-color: rgba(96, 165, 250, 0.16);
+      border: 0;
+      border-bottom: 1px solid rgba(96, 165, 250, 0.14);
+    }
+
+    textarea::-webkit-scrollbar {
+      display: none;
+    }
+
+    .composer textarea:focus {
+      border-color: rgba(96, 165, 250, 0.14);
+      box-shadow: none;
     }
 
     .composer-main {
       position: relative;
       display: flex;
       align-items: stretch;
+      border: 1px solid rgba(96, 165, 250, 0.16);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.02);
+      overflow: hidden;
     }
 
     .composer-actions {
-      position: absolute;
-      left: 12px;
-      right: 12px;
-      bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      z-index: 2;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.015);
     }
 
     .composer-left,
@@ -1277,9 +1290,7 @@
       }
 
       .composer-actions {
-        left: 10px;
-        right: 10px;
-        bottom: 10px;
+        padding: 10px;
       }
 
       .composer-right {
@@ -1293,7 +1304,7 @@
 
       textarea {
         min-height: 96px;
-        padding: 14px 92px 50px 14px;
+        padding: 14px;
       }
 
       .scenario-panel {
@@ -1397,24 +1408,24 @@
             <div class="composer-grid">
               <div class="composer-main">
                 <textarea id="messageInput" rows="1" placeholder="Опишите задачу, инцидент или вопрос для AI-агента..."></textarea>
-                <div class="composer-actions">
-                  <div class="composer-left">
-                    <button class="icon-button composer-utility" id="scenarioToggle" type="button" aria-label="Open scenario settings" aria-expanded="false" aria-controls="scenarioPanel">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M10.4 3H13.6L14.15 5.15C14.53 5.27 14.9 5.42 15.24 5.6L17.24 4.52L19.48 6.76L18.4 8.76C18.58 9.1 18.73 9.47 18.85 9.85L21 10.4V13.6L18.85 14.15C18.73 14.53 18.58 14.9 18.4 15.24L19.48 17.24L17.24 19.48L15.24 18.4C14.9 18.58 14.53 18.73 14.15 18.85L13.6 21H10.4L9.85 18.85C9.47 18.73 9.1 18.58 8.76 18.4L6.76 19.48L4.52 17.24L5.6 15.24C5.42 14.9 5.27 14.53 5.15 14.15L3 13.6V10.4L5.15 9.85C5.27 9.47 5.42 9.1 5.6 8.76L4.52 6.76L6.76 4.52L8.76 5.6C9.1 5.42 9.47 5.27 9.85 5.15L10.4 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
-                        <path d="M12 15.2C13.7673 15.2 15.2 13.7673 15.2 12C15.2 10.2327 13.7673 8.8 12 8.8C10.2327 8.8 8.8 10.2327 8.8 12C8.8 13.7673 10.2327 15.2 12 15.2Z" stroke="currentColor" stroke-width="1.4"/>
-                      </svg>
-                    </button>
-                    <div class="scenario-current" id="scenarioCurrent">max_patrol</div>
-                  </div>
-                  <div class="composer-right">
-                    <button class="icon-button composer-send" id="sendButton" type="button" aria-label="Send message">
-                      <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M4 12.8L9 17.5L20 6.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M4 7.5H13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-                      </svg>
-                    </button>
-                  </div>
+              </div>
+              <div class="composer-actions">
+                <div class="composer-left">
+                  <button class="icon-button composer-utility" id="scenarioToggle" type="button" aria-label="Open scenario settings" aria-expanded="false" aria-controls="scenarioPanel">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M10.4 3H13.6L14.15 5.15C14.53 5.27 14.9 5.42 15.24 5.6L17.24 4.52L19.48 6.76L18.4 8.76C18.58 9.1 18.73 9.47 18.85 9.85L21 10.4V13.6L18.85 14.15C18.73 14.53 18.58 14.9 18.4 15.24L19.48 17.24L17.24 19.48L15.24 18.4C14.9 18.58 14.53 18.73 14.15 18.85L13.6 21H10.4L9.85 18.85C9.47 18.73 9.1 18.58 8.76 18.4L6.76 19.48L4.52 17.24L5.6 15.24C5.42 14.9 5.27 14.53 5.15 14.15L3 13.6V10.4L5.15 9.85C5.27 9.47 5.42 9.1 5.6 8.76L4.52 6.76L6.76 4.52L8.76 5.6C9.1 5.42 9.47 5.27 9.85 5.15L10.4 3Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+                      <path d="M12 15.2C13.7673 15.2 15.2 13.7673 15.2 12C15.2 10.2327 13.7673 8.8 12 8.8C10.2327 8.8 8.8 10.2327 8.8 12C8.8 13.7673 10.2327 15.2 12 15.2Z" stroke="currentColor" stroke-width="1.4"/>
+                    </svg>
+                  </button>
+                  <div class="scenario-current" id="scenarioCurrent">max_patrol</div>
+                </div>
+                <div class="composer-right">
+                  <button class="icon-button composer-send" id="sendButton" type="button" aria-label="Send message">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M4 12.8L9 17.5L20 6.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M4 7.5H13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1942,6 +1953,9 @@
     function autoResizeTextarea() {
       messageInput.style.height = "auto";
       messageInput.style.height = Math.min(messageInput.scrollHeight, 220) + "px";
+      if (messageInput.scrollHeight <= 220 || !messageInput.value.trim()) {
+        messageInput.scrollTop = 0;
+      }
     }
 
     function scrollConversationToBottom() {
@@ -2103,6 +2117,7 @@
       renderHeader(chat);
 
       messageInput.value = "";
+      messageInput.scrollTop = 0;
       autoResizeTextarea();
       startStatusCycle();
       sendButton.disabled = true;
