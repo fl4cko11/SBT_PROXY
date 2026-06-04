@@ -1563,11 +1563,9 @@
 
     const initialState = loadState();
     const state = {
-      chats: initialState.length ? initialState : [createChat()],
+      chats: initialState,
       query: ""
     };
-
-    activeChatId = state.chats[0].id;
 
     function createChat() {
       const id = crypto.randomUUID();
@@ -1658,7 +1656,7 @@
     }
 
     function getActiveChat() {
-      return state.chats.find((chat) => chat.id === activeChatId) || state.chats[0];
+      return state.chats.find((chat) => chat.id === activeChatId) || state.chats[0] || null;
     }
 
     function setStatus(nextStatus, isActive) {
@@ -1763,12 +1761,8 @@
       }
 
       state.chats = state.chats.filter((item) => item.id !== chatId);
-      if (!state.chats.length) {
-        state.chats = [createChat()];
-      }
-
       if (activeChatId === chatId) {
-        activeChatId = state.chats[0].id;
+        activeChatId = state.chats[0]?.id || null;
       }
 
       saveState();
@@ -1809,8 +1803,8 @@
         return;
       }
 
-      state.chats = [createChat()];
-      activeChatId = state.chats[0].id;
+      state.chats = [];
+      activeChatId = null;
       saveState();
       render();
       clearChatsButton.disabled = false;
@@ -1828,7 +1822,9 @@
       });
 
       if (!filtered.length) {
-        chatList.innerHTML = '<div class="empty-state">По вашему запросу чаты не найдены.</div>';
+        chatList.innerHTML = state.chats.length
+          ? '<div class="empty-state">По вашему запросу чаты не найдены.</div>'
+          : '<div class="empty-state">История чатов пуста.</div>';
         return;
       }
 
@@ -1872,10 +1868,10 @@
 
     function renderScenarioPanel() {
       const chat = getActiveChat();
-      scenarioCurrent.textContent = chat.scenario;
+      scenarioCurrent.textContent = chat?.scenario || "max_patrol";
       scenarioOptionList.innerHTML = scenarioCatalog.map((scenario) => `
         <button
-          class="scenario-option ${scenario.value === chat.scenario ? "active" : ""}"
+          class="scenario-option ${scenario.value === (chat?.scenario || "max_patrol") ? "active" : ""}"
           type="button"
           data-scenario-value="${scenario.value}"
         >
@@ -1887,6 +1883,9 @@
 
     function setScenario(value) {
       const chat = getActiveChat();
+      if (!chat) {
+        return;
+      }
       chat.scenario = value;
       chat.updatedAt = new Date().toISOString();
       saveState();
@@ -1905,6 +1904,11 @@
     }
 
     function renderMessages(chat) {
+      if (!chat) {
+        conversation.innerHTML = '<div class="empty-state">Нажмите на плюсик слева, чтобы создать сессию.</div>';
+        return;
+      }
+
       if (!chat.messages.length) {
         conversation.innerHTML = '<div class="conversation-empty"></div>';
         return;
@@ -1937,6 +1941,13 @@
     }
 
     function renderHeader(chat) {
+      if (!chat) {
+        chatHeading.textContent = "Agent Conversation";
+        chatSubheading.textContent = "Нажмите на плюсик слева, чтобы создать сессию.";
+        sessionHint.textContent = "Session ID: -";
+        return;
+      }
+
       const count = chat.messages.length;
       chatHeading.textContent = chat.title;
       chatSubheading.textContent = count
@@ -1951,6 +1962,8 @@
       renderMessages(chat);
       renderHeader(chat);
       renderScenarioPanel();
+      sendButton.disabled = !chat;
+      scenarioToggle.disabled = !chat;
     }
 
     function autoResizeTextarea() {
@@ -2104,6 +2117,10 @@
 
     async function sendMessage() {
       const chat = getActiveChat();
+      if (!chat) {
+        window.alert("Сначала нажмите на плюсик слева, чтобы создать сессию.");
+        return;
+      }
       const query = messageInput.value.trim();
 
       if (!query) {
