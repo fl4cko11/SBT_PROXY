@@ -45,6 +45,7 @@
     html,
     body {
       height: 100%;
+      min-height: 100dvh;
       margin: 0;
     }
 
@@ -72,12 +73,15 @@
 
     .app-shell {
       position: relative;
-      height: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
       padding: 14px;
+      overflow: hidden;
     }
 
     .app-frame {
       height: 100%;
+      max-height: calc(100dvh - 28px);
       min-height: 0;
       display: grid;
       grid-template-columns: var(--sidebar-width) 1fr;
@@ -488,6 +492,9 @@
 
     .main-panel {
       min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
       display: grid;
       grid-template-rows: auto 1fr auto;
       background:
@@ -582,12 +589,20 @@
     }
 
     .conversation-scroll {
+      height: 0;
+      flex: 1 1 auto;
       min-height: 0;
       overflow: auto;
+      scrollbar-width: none;
       padding: 16px 20px 8px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      overscroll-behavior: contain;
+    }
+
+    .conversation-scroll::-webkit-scrollbar {
+      display: none;
     }
 
     .conversation-empty {
@@ -665,6 +680,103 @@
       line-height: 1.62;
       color: var(--text-main);
       font-size: 0.92rem;
+    }
+
+    .message-body.markdown {
+      white-space: normal;
+    }
+
+    .message-body.markdown > :first-child {
+      margin-top: 0;
+    }
+
+    .message-body.markdown > :last-child {
+      margin-bottom: 0;
+    }
+
+    .message-body.markdown h1,
+    .message-body.markdown h2,
+    .message-body.markdown h3,
+    .message-body.markdown h4 {
+      margin: 1em 0 0.45em;
+      line-height: 1.25;
+      color: var(--text-main);
+      font-weight: 650;
+    }
+
+    .message-body.markdown h1 {
+      font-size: 1.3rem;
+    }
+
+    .message-body.markdown h2 {
+      font-size: 1.14rem;
+    }
+
+    .message-body.markdown h3,
+    .message-body.markdown h4 {
+      font-size: 1rem;
+    }
+
+    .message-body.markdown p,
+    .message-body.markdown ul,
+    .message-body.markdown ol,
+    .message-body.markdown blockquote,
+    .message-body.markdown pre {
+      margin: 0.72em 0;
+    }
+
+    .message-body.markdown ul,
+    .message-body.markdown ol {
+      padding-left: 1.4em;
+    }
+
+    .message-body.markdown li + li {
+      margin-top: 0.24em;
+    }
+
+    .message-body.markdown a {
+      color: var(--blue-4);
+      text-decoration: none;
+    }
+
+    .message-body.markdown a:hover {
+      text-decoration: underline;
+    }
+
+    .message-body.markdown code {
+      padding: 0.14em 0.36em;
+      border-radius: 8px;
+      background: rgba(148, 163, 184, 0.12);
+      font-family: "SF Mono", "JetBrains Mono", "IBM Plex Mono", monospace;
+      font-size: 0.88em;
+    }
+
+    .message-body.markdown pre {
+      padding: 12px 14px;
+      border-radius: 14px;
+      overflow: auto;
+      background: rgba(2, 6, 23, 0.58);
+      border: 1px solid rgba(96, 165, 250, 0.12);
+    }
+
+    .message-body.markdown pre code {
+      padding: 0;
+      background: transparent;
+      border-radius: 0;
+      font-size: 0.86rem;
+      white-space: pre-wrap;
+    }
+
+    .message-body.markdown blockquote {
+      padding-left: 12px;
+      border-left: 2px solid rgba(96, 165, 250, 0.34);
+      color: var(--text-soft);
+    }
+
+    .message-body.markdown hr {
+      border: 0;
+      border-top: 1px solid rgba(96, 165, 250, 0.14);
+      margin: 1em 0;
     }
 
     .message-body.streaming::after {
@@ -1237,11 +1349,15 @@
 
       .app-shell {
         padding: 0;
+        height: auto;
+        max-height: none;
+        overflow: visible;
       }
 
       .app-frame {
         min-height: 100dvh;
         height: auto;
+        max-height: none;
         border-radius: 0;
         grid-template-columns: 1fr;
       }
@@ -1700,6 +1816,140 @@
         .replaceAll("'", "&#39;");
     }
 
+    function renderInlineMarkdown(text) {
+      return text
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    }
+
+    function renderMarkdown(content) {
+      const escaped = escapeHtml(content).replace(/\r\n/g, "\n");
+      const lines = escaped.split("\n");
+      const html = [];
+      let inCodeBlock = false;
+      let codeBuffer = [];
+      let listType = null;
+      let listBuffer = [];
+      let paragraphBuffer = [];
+
+      function flushParagraph() {
+        if (!paragraphBuffer.length) {
+          return;
+        }
+        html.push(`<p>${renderInlineMarkdown(paragraphBuffer.join("<br>"))}</p>`);
+        paragraphBuffer = [];
+      }
+
+      function flushList() {
+        if (!listBuffer.length || !listType) {
+          return;
+        }
+        const items = listBuffer.map((item) => `<li>${renderInlineMarkdown(item)}</li>`).join("");
+        html.push(`<${listType}>${items}</${listType}>`);
+        listBuffer = [];
+        listType = null;
+      }
+
+      function flushCodeBlock() {
+        if (!inCodeBlock) {
+          return;
+        }
+        html.push(`<pre><code>${codeBuffer.join("\n")}</code></pre>`);
+        codeBuffer = [];
+        inCodeBlock = false;
+      }
+
+      for (const line of lines) {
+        if (line.trim().startsWith("```")) {
+          flushParagraph();
+          flushList();
+          if (inCodeBlock) {
+            flushCodeBlock();
+          } else {
+            inCodeBlock = true;
+          }
+          continue;
+        }
+
+        if (inCodeBlock) {
+          codeBuffer.push(line);
+          continue;
+        }
+
+        const trimmed = line.trim();
+        if (!trimmed) {
+          flushParagraph();
+          flushList();
+          continue;
+        }
+
+        const headingMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
+        if (headingMatch) {
+          flushParagraph();
+          flushList();
+          const level = headingMatch[1].length;
+          html.push(`<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`);
+          continue;
+        }
+
+        if (trimmed === "---" || trimmed === "***") {
+          flushParagraph();
+          flushList();
+          html.push("<hr>");
+          continue;
+        }
+
+        const blockquoteMatch = trimmed.match(/^&gt;\s?(.*)$/);
+        if (blockquoteMatch) {
+          flushParagraph();
+          flushList();
+          html.push(`<blockquote>${renderInlineMarkdown(blockquoteMatch[1])}</blockquote>`);
+          continue;
+        }
+
+        const unorderedMatch = trimmed.match(/^[-*]\s+(.*)$/);
+        if (unorderedMatch) {
+          flushParagraph();
+          if (listType && listType !== "ul") {
+            flushList();
+          }
+          listType = "ul";
+          listBuffer.push(unorderedMatch[1]);
+          continue;
+        }
+
+        const orderedMatch = trimmed.match(/^\d+\.\s+(.*)$/);
+        if (orderedMatch) {
+          flushParagraph();
+          if (listType && listType !== "ol") {
+            flushList();
+          }
+          listType = "ol";
+          listBuffer.push(orderedMatch[1]);
+          continue;
+        }
+
+        flushList();
+        paragraphBuffer.push(trimmed);
+      }
+
+      flushParagraph();
+      flushList();
+      flushCodeBlock();
+
+      return html.join("");
+    }
+
+    function formatMessageContent(message) {
+      if (message.role === "agent") {
+        return `<div class="message-body markdown">${renderMarkdown(message.content)}</div>`;
+      }
+
+      return `<div class="message-body">${escapeHtml(message.content)}</div>`;
+    }
+
     function normalizeTitle(text) {
       const cleaned = text.replace(/\s+/g, " ").trim();
       return cleaned.length > 42 ? cleaned.slice(0, 42) + "..." : cleaned || "New conversation";
@@ -1931,7 +2181,7 @@
                 <span class="message-role">${message.role === "user" ? "Operator" : "Agent"}</span>
                 <span>${escapeHtml(formatTime(message.createdAt))}</span>
               </div>
-              <div class="message-body">${escapeHtml(message.content)}</div>
+              ${formatMessageContent(message)}
               ${artifacts}
             </article>
           </div>
@@ -2054,7 +2304,7 @@
                 <span class="message-role">${message.role === "user" ? "Operator" : "Agent"}</span>
                 <span>${escapeHtml(formatTime(message.createdAt))}</span>
               </div>
-              <div class="message-body">${escapeHtml(message.content)}</div>
+              ${formatMessageContent(message)}
               ${artifacts}
             </article>
           </div>
@@ -2112,6 +2362,8 @@
       const target = bodies[bodies.length - 1];
       if (target) {
         await streamText(target, answer);
+        target.classList.add("markdown");
+        target.innerHTML = renderMarkdown(answer);
       }
     }
 
