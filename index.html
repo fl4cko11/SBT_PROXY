@@ -806,6 +806,64 @@
       animation: bounceSoft 1.2s infinite ease-in-out;
     }
 
+    .message-attachment {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(96, 165, 250, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .message-attachment-copy {
+      min-width: 0;
+    }
+
+    .message-attachment-label {
+      margin: 0 0 3px;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .message-attachment-name {
+      margin: 0;
+      font-size: 0.84rem;
+      color: var(--text-soft);
+      word-break: break-word;
+    }
+
+    .attachment-download-button {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--text-main);
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition:
+        transform var(--anim-fast),
+        border-color var(--anim-med),
+        box-shadow var(--anim-med),
+        background var(--anim-med);
+    }
+
+    .attachment-download-button:hover,
+    .attachment-download-button:focus-visible {
+      outline: none;
+      transform: translateY(-1px);
+      border-color: rgba(96, 165, 250, 0.32);
+      background: rgba(59, 130, 246, 0.14);
+      box-shadow: 0 0 18px rgba(59, 130, 246, 0.12);
+    }
+
     .typing-indicator span:nth-child(2) {
       animation-delay: 120ms;
     }
@@ -1917,11 +1975,29 @@
     }
 
     function formatMessageContent(message) {
+      const attachment = message.fileContent
+        ? `
+          <div class="message-attachment">
+            <div class="message-attachment-copy">
+              <p class="message-attachment-label">CSV file</p>
+              <p class="message-attachment-name">${escapeHtml(message.fileName || "agent-result.csv")}</p>
+            </div>
+            <button
+              class="attachment-download-button"
+              type="button"
+              data-download-message-id="${message.id}"
+            >
+              Скачать CSV
+            </button>
+          </div>
+        `
+        : "";
+
       if (message.role === "agent") {
-        return `<div class="message-body markdown">${renderMarkdown(message.content)}</div>`;
+        return `<div class="message-body markdown">${renderMarkdown(message.content)}</div>${attachment}`;
       }
 
-      return `<div class="message-body">${escapeHtml(message.content)}</div>`;
+      return `<div class="message-body">${escapeHtml(message.content)}</div>${attachment}`;
     }
 
     function normalizeTitle(text) {
@@ -2209,10 +2285,57 @@
         id: crypto.randomUUID(),
         role,
         content,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        ...extras
       });
       chat.updatedAt = new Date().toISOString();
       updateChatTitle(chat);
+    }
+
+    function getMessageById(messageId) {
+      for (const chat of state.chats) {
+        const message = chat.messages.find((item) => item.id === messageId);
+        if (message) {
+          return message;
+        }
+      }
+      return null;
+    }
+
+    function decodeBase64ToBlob(base64Value, mimeType = "text/csv;charset=utf-8") {
+      const normalized = String(base64Value || "").trim();
+      const payload = normalized.startsWith("data:")
+        ? normalized.slice(normalized.indexOf(",") + 1)
+        : normalized;
+      const binary = window.atob(payload);
+      const bytes = new Uint8Array(binary.length);
+
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+
+      return new Blob([bytes], { type: mimeType });
+    }
+
+    function downloadMessageFile(messageId) {
+      const message = getMessageById(messageId);
+      if (!message?.fileContent) {
+        return;
+      }
+
+      try {
+        const blob = decodeBase64ToBlob(message.fileContent);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = message.fileName || "agent-result.csv";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      } catch (error) {
+        window.alert(`Не удалось скачать файл: ${error.message}`);
+      }
     }
 
     function addTypingPlaceholder(chat) {
@@ -2280,9 +2403,16 @@
     async function finalizeAgentMessage(chat, typingId, payload) {
       const index = chat.messages.findIndex((message) => message.id === typingId);
       const answer = payload.answer || "Агент не вернул текстовый ответ.";
+      const fileContent = payload.file_content || null;
+      const fileName = fileContent
+        ? `agent-result-${chat.sessionId.slice(0, 8)}-${Date.now()}.csv`
+        : null;
 
       if (index === -1) {
-        addMessage(chat, "agent", answer);
+        addMessage(chat, "agent", answer, {
+          fileContent,
+          fileName
+        });
         saveState();
         render();
         return;
@@ -2292,7 +2422,9 @@
         id: typingId,
         role: "agent",
         content: answer,
-        createdAt: chat.messages[index].createdAt
+        createdAt: chat.messages[index].createdAt,
+        fileContent,
+        fileName
       };
       chat.updatedAt = new Date().toISOString();
       saveState();
@@ -2532,6 +2664,15 @@
       const target = event.target.closest("[data-chat-id]");
       if (!target) return;
       switchChat(target.dataset.chatId);
+    });
+
+    conversation.addEventListener("click", (event) => {
+      const downloadButton = event.target.closest("[data-download-message-id]");
+      if (!downloadButton) {
+        return;
+      }
+
+      downloadMessageFile(downloadButton.dataset.downloadMessageId);
     });
 
     chatList.addEventListener("keydown", (event) => {
