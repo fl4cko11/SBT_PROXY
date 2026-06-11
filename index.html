@@ -722,7 +722,8 @@
     .message-body.markdown ul,
     .message-body.markdown ol,
     .message-body.markdown blockquote,
-    .message-body.markdown pre {
+    .message-body.markdown pre,
+    .message-body.markdown table {
       margin: 0.72em 0;
     }
 
@@ -778,6 +779,40 @@
       border: 0;
       border-top: 1px solid rgba(96, 165, 250, 0.14);
       margin: 1em 0;
+    }
+
+    .message-body.markdown table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(96, 165, 250, 0.14);
+      background: rgba(255, 255, 255, 0.018);
+    }
+
+    .message-body.markdown th,
+    .message-body.markdown td {
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(96, 165, 250, 0.1);
+      border-right: 1px solid rgba(96, 165, 250, 0.08);
+      font-size: 0.88rem;
+    }
+
+    .message-body.markdown th:last-child,
+    .message-body.markdown td:last-child {
+      border-right: 0;
+    }
+
+    .message-body.markdown thead th {
+      background: rgba(59, 130, 246, 0.08);
+      color: var(--text-main);
+      font-weight: 650;
+    }
+
+    .message-body.markdown tbody tr:last-child td {
+      border-bottom: 0;
     }
 
     .message-body.streaming::after {
@@ -1849,18 +1884,52 @@
     }
 
     function renderInlineMarkdown(text) {
-      return text
-        .replace(/`([^`]+)`/g, "<code>$1</code>")
+      const placeholders = [];
+      let output = escapeHtml(text);
+
+      output = output.replace(/`([^`]+)`/g, (_, code) => {
+        const token = `%%MD_TOKEN_${placeholders.length}%%`;
+        placeholders.push(`<code>${code}</code>`);
+        return token;
+      });
+
+      output = output.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_, label, url) => {
+        const token = `%%MD_TOKEN_${placeholders.length}%%`;
+        placeholders.push(`<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+        return token;
+      });
+
+      output = output
+        .replace(/\*\*\*([^*]+)\*\*\*/g, "<strong><em>$1</em></strong>")
+        .replace(/___([^_]+)___/g, "<strong><em>$1</em></strong>")
         .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
-        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        .replace(/__([^_]+)__/g, "<strong>$1</strong>")
+        .replace(/(^|[\s(>])\*([^*\n]+)\*(?=[\s).,!?;:]|$)/g, "$1<em>$2</em>")
+        .replace(/(^|[\s(>])_([^_\n]+)_(?=[\s).,!?;:]|$)/g, "$1<em>$2</em>")
+        .replace(/~~([^~]+)~~/g, "<del>$1</del>");
+
+      return output.replace(/%%MD_TOKEN_(\d+)%%/g, (_, index) => placeholders[Number(index)] || "");
+    }
+
+    function splitTableRow(row) {
+      const normalized = row.trim().replace(/^\|/, "").replace(/\|$/, "");
+      return normalized.split("|").map((cell) => renderInlineMarkdown(cell.trim()));
+    }
+
+    function isMarkdownTableSeparator(line) {
+      const normalized = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+      if (!normalized) {
+        return false;
+      }
+      return normalized.split("|").every((cell) => /^:?-{3,}:?$/.test(cell.trim()));
     }
 
     function renderMarkdown(content) {
-      const escaped = escapeHtml(content).replace(/\r\n/g, "\n");
-      const lines = escaped.split("\n");
+      const normalized = String(content || "").replace(/\r\n/g, "\n");
+      const lines = normalized.split("\n");
       const html = [];
       let inCodeBlock = false;
+      let codeLanguage = "";
       let codeBuffer = [];
       let listType = null;
       let listBuffer = [];
@@ -1870,7 +1939,7 @@
         if (!paragraphBuffer.length) {
           return;
         }
-        html.push(`<p>${renderInlineMarkdown(paragraphBuffer.join("<br>"))}</p>`);
+        html.push(`<p>${paragraphBuffer.map((line) => renderInlineMarkdown(line)).join("<br>")}</p>`);
         paragraphBuffer = [];
       }
 
@@ -1888,19 +1957,25 @@
         if (!inCodeBlock) {
           return;
         }
-        html.push(`<pre><code>${codeBuffer.join("\n")}</code></pre>`);
+        const languageClass = codeLanguage ? ` class="language-${escapeHtml(codeLanguage)}"` : "";
+        html.push(`<pre><code${languageClass}>${escapeHtml(codeBuffer.join("\n"))}</code></pre>`);
         codeBuffer = [];
         inCodeBlock = false;
+        codeLanguage = "";
       }
 
-      for (const line of lines) {
-        if (line.trim().startsWith("```")) {
+      for (let index = 0; index < lines.length; index += 1) {
+        const line = lines[index];
+        const trimmed = line.trim();
+
+        if (trimmed.startsWith("```")) {
           flushParagraph();
           flushList();
           if (inCodeBlock) {
             flushCodeBlock();
           } else {
             inCodeBlock = true;
+            codeLanguage = trimmed.slice(3).trim();
           }
           continue;
         }
@@ -1910,7 +1985,6 @@
           continue;
         }
 
-        const trimmed = line.trim();
         if (!trimmed) {
           flushParagraph();
           flushList();
@@ -1933,11 +2007,16 @@
           continue;
         }
 
-        const blockquoteMatch = trimmed.match(/^&gt;\s?(.*)$/);
-        if (blockquoteMatch) {
+        if (trimmed.startsWith(">")) {
           flushParagraph();
           flushList();
-          html.push(`<blockquote>${renderInlineMarkdown(blockquoteMatch[1])}</blockquote>`);
+          const quoteLines = [];
+          while (index < lines.length && lines[index].trim().startsWith(">")) {
+            quoteLines.push(lines[index].trim().replace(/^>\s?/, ""));
+            index += 1;
+          }
+          index -= 1;
+          html.push(`<blockquote>${quoteLines.map((quoteLine) => renderInlineMarkdown(quoteLine)).join("<br>")}</blockquote>`);
           continue;
         }
 
@@ -1960,6 +2039,32 @@
           }
           listType = "ol";
           listBuffer.push(orderedMatch[1]);
+          continue;
+        }
+
+        if (trimmed.includes("|") && index + 1 < lines.length && isMarkdownTableSeparator(lines[index + 1])) {
+          flushParagraph();
+          flushList();
+          const headerCells = splitTableRow(trimmed);
+          const bodyRows = [];
+          index += 2;
+
+          while (index < lines.length) {
+            const tableLine = lines[index].trim();
+            if (!tableLine || !tableLine.includes("|")) {
+              break;
+            }
+            bodyRows.push(splitTableRow(tableLine));
+            index += 1;
+          }
+
+          index -= 1;
+
+          const headerHtml = `<thead><tr>${headerCells.map((cell) => `<th>${cell}</th>`).join("")}</tr></thead>`;
+          const bodyHtml = bodyRows.length
+            ? `<tbody>${bodyRows.map((cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}</tbody>`
+            : "";
+          html.push(`<table>${headerHtml}${bodyHtml}</table>`);
           continue;
         }
 
