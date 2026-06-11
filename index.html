@@ -1926,6 +1926,11 @@
 
     function renderMarkdown(content) {
       const normalized = String(content || "").replace(/\r\n/g, "\n");
+      const wrappedMarkdownMatch = normalized.match(/^```(?:markdown|md)\s*\n([\s\S]*?)\n```$/i);
+      if (wrappedMarkdownMatch) {
+        return renderMarkdown(wrappedMarkdownMatch[1]);
+      }
+
       const lines = normalized.split("\n");
       const html = [];
       let inCodeBlock = false;
